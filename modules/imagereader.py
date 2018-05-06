@@ -1,3 +1,4 @@
+from modules.dqt import DQT
 from modules.filereader import FileReader
 from modules.imageparser import ImageParser
 
@@ -9,14 +10,20 @@ class ImageReader:
     todo: should return rgb matrix (representing image)
     """
     def __init__(self, filename):
-        self.__filereader = FileReader(filename)
+        self.filereader = FileReader(filename)
         self.parsed_image = None
+        self.dqt_list = {}
 
     def process_image(self):
-        self.__read_image()
-        image_parser = ImageParser(self.__filereader.two_byte_iterator())
+        self.read_image()
+        image_parser = ImageParser(self.filereader.two_byte_iterator())
         self.parsed_image = image_parser.parse()
+        self.load_dqt()
 
-    def __read_image(self):
-        self.__filereader.read()
-        self.__filereader.hexify()
+    def read_image(self):
+        self.filereader.read()
+        self.filereader.hexify()
+
+    def load_dqt(self):
+        for i in self.parsed_image.quant_tables:
+            self.dqt_list[i] = DQT(self.parsed_image.quant_tables[i])

@@ -14,16 +14,17 @@ class ImageParser:
     HEX image parser
     parse function returns ParsedImage object, which contains sections of image file
     """
+
     def __init__(self, iterator):
         self.iterator = iterator
-        self.__parsed_image = ParsedImage()
+        self.parsed_image = ParsedImage()
 
     def parse(self):
         for chunk in self.iterator:
             marker = chunk + self.get_one_byte()
             self.get_marker_handler(marker)
-
-        return self.__parsed_image
+        self.parsed_image.parse_image_params()
+        return self.parsed_image
 
     def get_marker_handler(self, marker):
         """
@@ -31,26 +32,27 @@ class ImageParser:
         each function handles it's own section
         :param marker:
         """
+
         def comment_handler(section):
-            self.__parsed_image.comment = section
+            self.parsed_image.comment = section
 
         def quant_table_handler(section):
             table_id = int(section[:2])
-            self.__parsed_image.quant_tables[table_id] = section[2:]
+            self.parsed_image.quant_tables[table_id] = section[2:]
 
         def coding_param_handler(section):
-            self.__parsed_image.coding_param = section
+            self.parsed_image.coding_param = section
 
         def huffman_table_handler(section):
             table_id = int(section[:2])
-            self.__parsed_image.huffman_tables[table_id] = section[2:]
+            self.parsed_image.huffman_tables[table_id] = section[2:]
 
         def start_of_scan_handle(section):
-            self.__parsed_image.start_of_scan_header = section
+            self.parsed_image.start_of_scan_header = section
             for item in self.iterator:
-                self.__parsed_image.start_of_scan_body += item
-            if self.__parsed_image.start_of_scan_body[-4:] == END_FILE_MARKER:
-                self.__parsed_image.start_of_scan_body = self.__parsed_image.start_of_scan_body[:-4]
+                self.parsed_image.start_of_scan_body += item
+            if self.parsed_image.start_of_scan_body[-4:] == END_FILE_MARKER:
+                self.parsed_image.start_of_scan_body = self.parsed_image.start_of_scan_body[:-4]
 
         # byte-handler map
         handler_map = {
@@ -70,7 +72,7 @@ class ImageParser:
 
     def get_one_byte(self):
         try:
-            return next(self.iterator)
+            return self.iterator.__next__()
         except StopIteration:
             return b''
 
@@ -87,6 +89,9 @@ class ImageParser:
         return section_string
 
 
+COMPONENT_PARAMS_LENGTH = 6
+
+
 class ParsedImage:
     """
     Object of this class contains information of image file
@@ -97,3 +102,28 @@ class ParsedImage:
     huffman_tables = {}
     start_of_scan_header = b''
     start_of_scan_body = b''
+    params = {}
+
+    def parse_image_params(self):
+        """
+        parses coding params:
+        - image width and height
+        - components count
+        - vertical and horizontal dithering, dqt index for each color component
+        """
+        params = self.coding_param.decode("utf-8")
+        self.params = {
+            'precision': int(params[0:2]),
+            'height': int(params[2:6]),
+            'width': int(params[6:10]),
+            'components': {}
+        }
+        offset = 10
+        for i in range(0, 3):
+            current_offset = offset + COMPONENT_PARAMS_LENGTH * i + 1
+            print(current_offset)
+            self.params['components'][int(params[current_offset: current_offset + 1])] = {
+                'h': int(params[current_offset + 2]),
+                'v': int(params[current_offset + 3]),
+                'dqt': int(params[current_offset + 4: current_offset + 5])
+            }
