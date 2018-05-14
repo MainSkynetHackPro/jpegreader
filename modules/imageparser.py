@@ -22,11 +22,11 @@ class ImageParser:
     def parse(self):
         for chunk in self.iterator:
             marker = chunk + self.get_one_byte()
-            self.get_marker_handler(marker)
+            self.load_classified_section(marker)
         self.parsed_image.parse_image_params()
         return self.parsed_image
 
-    def get_marker_handler(self, marker):
+    def load_classified_section(self, marker):
         """
         Fills ParsedImage object with sections
         each function handles it's own section
@@ -45,7 +45,7 @@ class ImageParser:
 
         def huffman_table_handler(section):
             table_id = int(section[:2])
-            self.parsed_image.huffman_tables[table_id] = section[2:]
+            self.parsed_image.huffman_tables.append(section)
 
         def start_of_scan_handle(section):
             self.parsed_image.start_of_scan_header = section
@@ -99,10 +99,11 @@ class ParsedImage:
     comment = b''
     quant_tables = {}
     coding_param = b''
-    huffman_tables = {}
+    huffman_tables = []
     start_of_scan_header = b''
     start_of_scan_body = b''
     params = {}
+    decimation = {}
 
     def parse_image_params(self):
         """
@@ -114,16 +115,25 @@ class ParsedImage:
         params = self.coding_param.decode("utf-8")
         self.params = {
             'precision': int(params[0:2]),
-            'height': int(params[2:6]),
-            'width': int(params[6:10]),
+            'height': int(params[2:6], 16),
+            'width': int(params[6:10], 16),
             'components': {}
         }
-        offset = 10
+        offset = 12
         for i in range(0, 3):
-            current_offset = offset + COMPONENT_PARAMS_LENGTH * i + 1
-            print(current_offset)
-            self.params['components'][int(params[current_offset: current_offset + 1])] = {
+            current_offset = offset + COMPONENT_PARAMS_LENGTH * i
+            self.params['components'][int(params[current_offset: current_offset + 2])] = {
                 'h': int(params[current_offset + 2]),
                 'v': int(params[current_offset + 3]),
-                'dqt': int(params[current_offset + 4: current_offset + 5])
+                'dqt': int(params[current_offset + 4: current_offset + 6])
+            }
+        self.fill_channels_decimation()
+
+    def fill_channels_decimation(self):
+        h_max = max([item['h'] for dummy, item in self.params['components'].items()])
+        v_max = max([item['v'] for dummy, item in self.params['components'].items()])
+        for index in self.params['components']:
+            self.decimation[index] = {
+                'h': int(h_max / self.params['components'][index]['h']),
+                'v': int(v_max / self.params['components'][index]['v'])
             }

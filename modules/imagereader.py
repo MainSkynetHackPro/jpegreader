@@ -1,5 +1,6 @@
 from modules.dqt import DQT
 from modules.filereader import FileReader
+from modules.huffmantrees import HuffmanTrees
 from modules.imageparser import ImageParser
 
 
@@ -12,6 +13,7 @@ class ImageReader:
     def __init__(self, filename):
         self.filereader = FileReader(filename)
         self.parsed_image = None
+        self.huffman_trees = HuffmanTrees()
         self.dqt_list = {}
 
     def process_image(self):
@@ -19,6 +21,7 @@ class ImageReader:
         image_parser = ImageParser(self.filereader.two_byte_iterator())
         self.parsed_image = image_parser.parse()
         self.load_dqt()
+        self.build_huffman_trees()
 
     def read_image(self):
         self.filereader.read()
@@ -27,3 +30,7 @@ class ImageReader:
     def load_dqt(self):
         for i in self.parsed_image.quant_tables:
             self.dqt_list[i] = DQT(self.parsed_image.quant_tables[i])
+
+    def build_huffman_trees(self):
+        for item in self.parsed_image.huffman_tables:
+            self.huffman_trees.add(item)
