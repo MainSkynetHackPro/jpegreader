@@ -34,3 +34,4 @@ class ImageReader:
     def build_huffman_trees(self):
         for item in self.parsed_image.huffman_tables:
             self.huffman_trees.add(item)
+        self.huffman_trees.build()
