@@ -55,7 +55,6 @@ class HuffmanTree:
         for index, value in enumerate(self.values):
             pointer = self.insert_node(value, next(code_len))
             self.huffman_table[pointer.code] = pointer.value
-        print(self.huffman_table)
 
     def get_codes(self):
         codes = []

@@ -104,6 +104,7 @@ class ParsedImage:
     start_of_scan_body = b''
     params = {}
     decimation = {}
+    start_of_scan_params = {}
 
     def parse_image_params(self):
         """
@@ -128,6 +129,7 @@ class ParsedImage:
                 'dqt': int(params[current_offset + 4: current_offset + 6])
             }
         self.fill_channels_decimation()
+        self.parse_start_of_scan_params()
 
     def fill_channels_decimation(self):
         h_max = max([item['h'] for dummy, item in self.params['components'].items()])
@@ -136,4 +138,14 @@ class ParsedImage:
             self.decimation[index] = {
                 'h': int(h_max / self.params['components'][index]['h']),
                 'v': int(v_max / self.params['components'][index]['v'])
+            }
+
+    def parse_start_of_scan_params(self):
+        offset = 4
+        self.start_of_scan_params['elements'] = int(self.start_of_scan_header[0:2], 16)
+        for i in range(0, self.start_of_scan_params['elements']):
+            start = offset + i * offset
+            self.start_of_scan_params[i + 1] = {
+                'dc': int(self.start_of_scan_header[start: start + 1], 16),
+                'ac': int(self.start_of_scan_header[start+1: start+2], 16)
             }

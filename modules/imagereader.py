@@ -1,3 +1,4 @@
+from modules.AcDcMatrix import AcDcMatrix
 from modules.dqt import DQT
 from modules.filereader import FileReader
 from modules.huffmantrees import HuffmanTrees
@@ -22,6 +23,7 @@ class ImageReader:
         self.parsed_image = image_parser.parse()
         self.load_dqt()
         self.build_huffman_trees()
+        acdc_matrix = AcDcMatrix(self.huffman_trees, self.parsed_image.start_of_scan_params, self.parsed_image.start_of_scan_body)
 
     def read_image(self):
         self.filereader.read()
