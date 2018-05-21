@@ -104,6 +104,7 @@ class ParsedImage:
     start_of_scan_body = b''
     params = {}
     decimation = {}
+    inv_decimation = {}
     start_of_scan_params = {}
 
     def parse_image_params(self):
@@ -138,6 +139,10 @@ class ParsedImage:
             self.decimation[index] = {
                 'h': int(h_max / self.params['components'][index]['h']),
                 'v': int(v_max / self.params['components'][index]['v'])
+            }
+            self.inv_decimation[index] = {
+                'h': int(self.params['components'][index]['h']),
+                'v': int(self.params['components'][index]['v'])
             }
 
     def parse_start_of_scan_params(self):

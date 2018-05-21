@@ -43,6 +43,7 @@ class HuffmanTree:
         self.tree_head = TreeNode(code_len=0)
         self.pointer = self.tree_head
         self.huffman_table = {}
+        self.max_key_length = 0
 
     def build(self):
         def len_generator(codes_list):
@@ -55,6 +56,7 @@ class HuffmanTree:
         for index, value in enumerate(self.values):
             pointer = self.insert_node(value, next(code_len))
             self.huffman_table[pointer.code] = pointer.value
+            self.max_key_length = max(len(pointer.code), self.max_key_length)
 
     def get_codes(self):
         codes = []
@@ -65,7 +67,7 @@ class HuffmanTree:
     def get_values(self):
         values = []
         for index in range(CODES_OFFSET + 2, len(self.huffman_string), 2):
-            values.append(int(self.huffman_string[index: index + 2], 16))
+            values.append(self.huffman_string[index: index + 2])
         return values
 
     def insert_node(self, value, code_len):
